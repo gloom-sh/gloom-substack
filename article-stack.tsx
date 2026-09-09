@@ -1,7 +1,8 @@
 import { useCallback, type ReactNode, type RefObject } from "react";
-import { Box, Text, TextAttributes, type ScrollBoxRenderable } from "gloomberb/ui";
+import { Box, TextAttributes, type ScrollBoxRenderable } from "gloomberb/ui";
 import {
   DataTableStackView,
+  Spinner,
   type DataTableCell,
   type DataTableKeyEvent,
 } from "gloomberb/components";
@@ -94,7 +95,7 @@ export function SubstackArticleStack({
 
   const bodyAfter = activePublication && sortedRows.length > 0 && (activeFeedState.loading || activeFeedState.loadingMore) ? (
     <Box height={1} paddingX={1}>
-      <Text fg={colors.textDim}>{activeFeedState.loadingMore ? "Loading more..." : "Loading archive..."}</Text>
+      <Spinner label={activeFeedState.loadingMore ? "Loading more..." : "Loading archive..."} />
     </Box>
   ) : null;
 

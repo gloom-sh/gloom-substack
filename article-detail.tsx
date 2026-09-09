@@ -1,8 +1,6 @@
 import { memo, useCallback, useMemo, type RefObject } from "react";
-import { Box, ScrollBox, Text, TextAttributes, useRendererHost, type ScrollBoxRenderable } from "gloomberb/ui";
-import { Spinner } from "gloomberb/components";
-import { RemoteImage } from "gloomberb/components";
-import { TickerBadgeText } from "gloomberb/components";
+import { Box, ScrollBox, Text, useRendererHost, type ScrollBoxRenderable } from "gloomberb/ui";
+import { Button, Divider, EmptyState, ExternalLinkText, Notice, SectionHeading, Spinner, RemoteImage, TickerBadgeText } from "gloomberb/components";
 import { useInlineTickers } from "gloomberb/react";
 import { colors } from "gloomberb/theme";
 import { formatReadTime, formatWordCount } from "./table";
@@ -24,19 +22,6 @@ function articleBlockText(block: SubstackContentBlock): string {
     default:
       return "";
   }
-}
-
-function wrappedTextProps(width: number) {
-  return {
-    width,
-    wrapText: true,
-    wrapMode: "word",
-    style: {
-      minWidth: 0,
-      whiteSpace: "pre-wrap",
-      overflowWrap: "anywhere",
-    },
-  } as const;
 }
 
 const ARTICLE_IMAGE_MAX_WIDTH = 152;
@@ -88,14 +73,9 @@ function TweetEmbedView({
   return (
     <Box flexDirection="column" width={lineWidth} paddingX={1}>
       <Box flexDirection="row" width={Math.max(1, lineWidth - 2)}>
-        <Text fg={colors.textDim} attributes={TextAttributes.BOLD}>Tweet</Text>
+        <SectionHeading title="Tweet" />
         {username ? (
-          <Text
-            fg={colors.borderFocused}
-            onMouseDown={() => openUsername(username)}
-          >
-            {` @${username}`}
-          </Text>
+          <ExternalLinkText url={`https://x.com/${username}`} label={` @${username}`} onOpen={() => openUsername(username)} />
         ) : null}
         {block.dateLabel ? <Text fg={colors.textDim}>{` | ${block.dateLabel}`}</Text> : null}
       </Box>
@@ -128,12 +108,7 @@ function TweetEmbedView({
         </Box>
       ) : null}
       {block.url ? (
-        <Text
-          fg={colors.borderFocused}
-          onMouseDown={() => openLink(block.url!)}
-        >
-          open tweet
-        </Text>
+        <ExternalLinkText url={block.url} label="Open tweet" onOpen={openLink} />
       ) : null}
     </Box>
   );
@@ -161,13 +136,7 @@ function ArticleBlockView({
   switch (block.type) {
     case "heading":
       return (
-        <Text
-          fg={colors.textBright}
-          attributes={TextAttributes.BOLD}
-          {...wrappedTextProps(lineWidth)}
-        >
-          {block.text}
-        </Text>
+        <SectionHeading title={block.text} width={lineWidth} wrap />
       );
     case "quote":
       return (
@@ -230,9 +199,7 @@ function ArticleBlockView({
       }
       return (
         <Box flexDirection="column" width={lineWidth} paddingX={1}>
-          <Text fg={colors.textDim} attributes={TextAttributes.BOLD}>
-            {block.kind === "media" ? "Media" : "Link"}
-          </Text>
+          <SectionHeading title={block.kind === "media" ? "Media" : "Link"} />
           <TickerBadgeText
             text={block.text}
             lineWidth={Math.max(1, lineWidth - 2)}
@@ -243,21 +210,12 @@ function ArticleBlockView({
             openUsername={openUsername}
           />
           {block.url ? (
-            <Text
-              fg={colors.borderFocused}
-              onMouseDown={() => openLink(block.url!)}
-              {...wrappedTextProps(Math.max(1, lineWidth - 2))}
-            >
-              {block.url}
-            </Text>
+            <ExternalLinkText url={block.url} onOpen={openLink} />
           ) : null}
         </Box>
       );
     case "divider":
-      // A real filled rule in both renderers instead of a row of hyphens.
-      return (
-        <Box height={1} width={Math.max(1, Math.min(lineWidth, 96))} backgroundColor={colors.border} />
-      );
+      return <Divider width={Math.max(1, Math.min(lineWidth, 96))} />;
     case "paragraph":
     default:
       return (
@@ -316,7 +274,7 @@ const ArticleRichContent = memo(function ArticleRichContent({
   }, [rendererHost]);
 
   if (resolvedBlocks.length === 0) {
-    return <Text fg={colors.textDim}>No article text returned.</Text>;
+    return <EmptyState title="No article text returned." />;
   }
 
   return (
@@ -376,7 +334,7 @@ export const ArticleDetail = memo(function ArticleDetail({
           </Text>
         </Box>
         {loading && !resolved ? <Spinner label="Loading article..." /> : null}
-        {error ? <Text fg={colors.negative}>{error}</Text> : null}
+        {error ? <Notice tone="negative">{error}</Notice> : null}
         <ArticleRichContent
           blocks={blocks}
           fallbackText={text}
@@ -387,9 +345,7 @@ export const ArticleDetail = memo(function ArticleDetail({
           imageHeight={imageHeight}
         />
         {article.url ? (
-          <Box height={1}>
-            <Text fg={colors.textDim} onMouseDown={onOpenArticle}>Open source: O</Text>
-          </Box>
+          <Button label="Open source" shortcut="O" variant="ghost" compact onPress={onOpenArticle} />
         ) : null}
       </Box>
     </ScrollBox>
