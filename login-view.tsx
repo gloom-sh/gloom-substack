@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Box, Text, TextAttributes, type InputRenderable } from "gloomberb/ui";
-import { Button, TextField } from "gloomberb/components";
-import { colors } from "gloomberb/theme";
+import { Box, type InputRenderable } from "gloomberb/ui";
+import { Button, Notice, SectionHeading, TextField } from "gloomberb/components";
 import {
   completeSubstackMagicLink,
   completeSubstackOtpLogin,
@@ -67,7 +66,7 @@ export function SubstackLoginView({
   return (
     <Box width={width} height={height} justifyContent="center" alignItems="center">
       <Box width={panelWidth} flexDirection="column" gap={1}>
-        <Text fg={colors.textBright} attributes={TextAttributes.BOLD}>Substack login</Text>
+        <SectionHeading title="Substack login" />
         {phase === "email" ? (
           <>
             <TextField
@@ -89,7 +88,7 @@ export function SubstackLoginView({
           </>
         ) : (
           <>
-            <Text fg={colors.textDim}>Paste the 6-digit code or full URL from Substack's email.</Text>
+            <Notice tone="muted">Paste the 6-digit code or full URL from Substack's email.</Notice>
             <TextField
               label="Code or magic link"
               value={loginToken}
@@ -114,12 +113,13 @@ export function SubstackLoginView({
                 onPress={() => {
                   setPhase("email");
                   setLoginToken("");
+                  setError(null);
                 }}
               />
             </Box>
           </>
         )}
-        {error ? <Text fg={colors.negative}>{error}</Text> : null}
+        {error ? <Notice tone="negative">{error}</Notice> : null}
       </Box>
     </Box>
   );

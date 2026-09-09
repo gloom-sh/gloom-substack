@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, useRendererHost, type ScrollBoxRenderable } from "gloomberb/ui";
 import {
-  EmptyState,
-  Spinner,
+  PaneStatusBody,
   useTableLoadMore,
   type DataTableKeyEvent,
 } from "gloomberb/components";
@@ -478,28 +477,6 @@ export function SubstackPane({ focused, width, height }: PaneProps) {
     />
   );
 
-  if (home.loading && !home.data) {
-    return (
-      <Box flexDirection="column" width={width} height={height}>
-        {tabs}
-        <Box flexGrow={1} justifyContent="center" alignItems="center">
-          <Spinner label="Loading Substack..." />
-        </Box>
-      </Box>
-    );
-  }
-
-  if (home.error && !home.data) {
-    return (
-      <Box flexDirection="column" width={width} height={height}>
-        {tabs}
-        <Box padding={1}>
-          <EmptyState title="Substack unavailable." message={home.error} />
-        </Box>
-      </Box>
-    );
-  }
-
   const detailContent = selectedArticle ? (
     <ArticleDetail
       article={selectedArticle}
@@ -515,6 +492,13 @@ export function SubstackPane({ focused, width, height }: PaneProps) {
   return (
     <Box flexDirection="column" width={width} height={height}>
       {tabs}
+      <PaneStatusBody
+        align="center"
+        loading={home.loading && !home.data}
+        loadingLabel="Loading Substack..."
+        error={!home.data ? home.error : null}
+        errorTitle="Substack unavailable."
+      >
       <SubstackArticleStack
         focused={focused}
         detailOpen={detailOpen}
@@ -542,6 +526,7 @@ export function SubstackPane({ focused, width, height }: PaneProps) {
         sort={sort}
         onHeaderClick={handleHeaderClick}
       />
+      </PaneStatusBody>
     </Box>
   );
 }

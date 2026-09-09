@@ -2,6 +2,8 @@
 
 Your Substack subscriptions in [Gloomberb](https://github.com/gloom-sh/gloomberb) — inbox, per-publication archives, and full article reading without leaving the terminal.
 
+This UI migration requires the shared component API in [Gloomberb #743](https://github.com/gloom-sh/gloomberb/pull/743), targeting 0.14.0. Keep this branch staged until that host release is available; released 0.13.3 does not provide these components.
+
 ```bash
 gloomberb install gloom-sh/gloomberb-substack
 ```
