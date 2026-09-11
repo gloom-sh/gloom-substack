@@ -16,5 +16,10 @@
   "hosts": [
     "substack.com"
   ],
+  "contributes": {
+    "panes": [
+      "substack"
+    ]
+  },
   "minGloomberb": "0.14.0"
 }
