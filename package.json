@@ -1,5 +1,5 @@
 {
-  "name": "gloomberb-substack",
+  "name": "gloom-substack",
   "version": "1.0.0",
   "description": "Authenticated Substack reader and subscriptions for Gloomberb",
   "type": "module",
@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gloom-sh/gloomberb-substack"
+    "url": "https://github.com/gloom-sh/gloom-substack"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

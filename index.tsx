@@ -14,7 +14,7 @@ export const substackPlugin: GloomPlugin = {
   name: "Substack",
   version: "1.0.0",
   description: "Authenticated Substack reader feed and subscriptions",
-  homepage: "https://github.com/gloom-sh/gloomberb-substack",
+  homepage: "https://github.com/gloom-sh/gloom-substack",
   toggleable: true,
 
   // Substack's API sends no CORS headers, so the browser build cannot reach it.
