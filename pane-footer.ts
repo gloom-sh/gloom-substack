@@ -12,6 +12,7 @@ export function useSubstackPaneFooter({
   activeFeedState,
   activeDetail,
   selectedArticle,
+  errorInBody,
   openSelectedArticle,
 }: {
   auth: SubstackAuthState | null;
@@ -19,17 +20,18 @@ export function useSubstackPaneFooter({
   activeFeedState: ActiveFeedState;
   activeDetail: DetailState;
   selectedArticle: SubstackArticleSummary | null;
+  /** The body already shows the feed failure, so the footer does not repeat it. */
+  errorInBody: boolean;
   openSelectedArticle: () => void;
 }) {
   const statusLabel = cacheStatusLabel(activeFeedState.fetchedAt, activeFeedState.stale);
 
   usePaneFooter(SUBSTACK_PANE_ID, () => ({
     info: [
-      ...(!auth ? [{ id: "auth", parts: [{ text: "login required", tone: "warning" as const }] }] : []),
       ...(activeFeedState.loading || activeFeedState.loadingMore ? [{ id: "loading", parts: [{ text: activeFeedState.loadingMore ? "loading more" : "loading", tone: "muted" as const }] }] : []),
       ...(activeDetail.loading && detailOpen ? [{ id: "detail-loading", parts: [{ text: "loading article", tone: "muted" as const }] }] : []),
       ...(statusLabel && auth ? [{ id: "cache", parts: [{ text: statusLabel, tone: activeFeedState.stale ? "warning" as const : "muted" as const }] }] : []),
-      ...(activeFeedState.error ? [{ id: "error", parts: [{ text: activeFeedState.error, tone: "warning" as const }] }] : []),
+      ...(activeFeedState.error && !errorInBody ? [{ id: "error", parts: [{ text: activeFeedState.error, tone: "warning" as const }] }] : []),
       ...(activeDetail.error && detailOpen ? [{ id: "detail-error", parts: [{ text: activeDetail.error, tone: "warning" as const }] }] : []),
     ],
     hints: auth
@@ -45,6 +47,7 @@ export function useSubstackPaneFooter({
     activeFeedState.stale,
     auth,
     detailOpen,
+    errorInBody,
     openSelectedArticle,
     selectedArticle?.url,
     statusLabel,
