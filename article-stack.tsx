@@ -1,8 +1,8 @@
 import { useCallback, type ReactNode, type RefObject } from "react";
-import { Box, TextAttributes, type ScrollBoxRenderable } from "gloomberb/ui";
+import { TextAttributes, type ScrollBoxRenderable } from "gloomberb/ui";
 import {
   DataTableStackView,
-  Spinner,
+  loadingText,
   type DataTableCell,
   type DataTableKeyEvent,
 } from "gloomberb/components";
@@ -93,11 +93,12 @@ export function SubstackArticleStack({
     }
   }, [readArticleIds]);
 
-  const bodyAfter = activePublication && sortedRows.length > 0 && (activeFeedState.loading || activeFeedState.loadingMore) ? (
-    <Box height={1} paddingX={1}>
-      <Spinner label={activeFeedState.loadingMore ? "Loading more..." : "Loading archive..."} />
-    </Box>
-  ) : null;
+  // Loading and failures are footer status; the empty body only names the state.
+  const emptyStateTitle = activeFeedState.loading
+    ? loadingText("articles")
+    : activeFeedState.error
+      ? activePublication ? "Archive unavailable." : "Feed unavailable."
+      : "No articles.";
 
   return (
     <DataTableStackView<SubstackArticleSummary, SubstackColumn>
@@ -117,9 +118,8 @@ export function SubstackArticleStack({
       onDetailKeyDown={onDetailKeyDown}
       onBodyScrollActivity={onBodyScrollActivity}
       scrollRef={tableScrollRef}
-      bodyAfter={bodyAfter}
       rootWidth={width}
-      rootHeight={Math.max(1, height - 1)}
+      rootHeight={height}
       columns={columns}
       items={sortedRows}
       sortColumnId={sort.columnId}
@@ -127,8 +127,7 @@ export function SubstackArticleStack({
       onHeaderClick={onHeaderClick}
       getItemKey={(article) => article.id}
       renderCell={renderCell}
-      emptyStateTitle={activeFeedState.loading ? "Loading articles..." : activeFeedState.error ?? "No Substack posts"}
-      emptyStateHint={activePublication ? activePublication.name : "Authenticated reader feed"}
+      emptyStateTitle={emptyStateTitle}
     />
   );
 }

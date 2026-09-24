@@ -81,13 +81,15 @@ export function formatWordCount(words: number): string {
 export function buildSubstackColumns(width: number, includePublication: boolean): SubstackColumn[] {
   const publishedWidth = 13;
   const readWidth = 5;
-  const publicationWidth = includePublication ? Math.max(12, Math.min(21, Math.floor(width * 0.18))) : 0;
-  const fixed = publishedWidth + readWidth + publicationWidth;
-  const titleWidth = Math.max(18, width - fixed - 4);
+  // Below 60 cells the publication column would push the title off the pane.
+  const showPublication = includePublication && width >= 60;
+  const publicationWidth = showPublication ? Math.max(12, Math.min(21, Math.floor(width * 0.18))) : 0;
+  // A base width only: the table grows the title into whatever the pane has left.
+  const titleWidth = 18;
   const columns: SubstackColumn[] = [
     { id: "published", label: "Published", width: publishedWidth, align: "left" },
   ];
-  if (includePublication) {
+  if (showPublication) {
     columns.push({ id: "publication", label: "Publication", width: publicationWidth, align: "left" });
   }
   columns.push(

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, useRendererHost, type ScrollBoxRenderable } from "gloomberb/ui";
 import {
+  Button,
   PaneStatusBody,
+  usePaneHeaderTabs,
   useTableLoadMore,
   type DataTableKeyEvent,
 } from "gloomberb/components";
@@ -27,7 +29,7 @@ import {
 } from "./api/types";
 import { ArticleDetail } from "./article-detail";
 import { SubstackArticleStack } from "./article-stack";
-import { SubstackFeedTabs } from "./feed-tabs";
+import { SubstackFeedTabs, useSubstackFeedTabs } from "./feed-tabs";
 import { SubstackLoginView } from "./login-view";
 import {
   buildSubstackColumns,
@@ -447,14 +449,27 @@ export function SubstackPane({ focused, width, height }: PaneProps) {
   const includePublication = !activePublication;
   const columns = useMemo(() => buildSubstackColumns(width, includePublication), [includePublication, width]);
   const activeDetail = selectedArticle ? details[selectedArticle.id] ?? emptyLoadState<SubstackArticleDetail>() : emptyLoadState<SubstackArticleDetail>();
+  const homeFailed = !!auth && !home.data && !!home.error;
   useSubstackPaneFooter({
     auth,
     detailOpen,
     activeFeedState,
     activeDetail,
     selectedArticle,
+    errorInBody: homeFailed,
     openSelectedArticle,
   });
+
+  // Every tab shows the same sign-in form or first load, so the strip waits for the subscriptions.
+  const feedTabs = useSubstackFeedTabs(subscriptions);
+  const showFeedTabs = !!auth && !!home.data;
+  const tabsInHeader = usePaneHeaderTabs(showFeedTabs ? {
+    tabs: feedTabs,
+    activeValue: activeTab,
+    onSelect: selectTab,
+    focused: focused && !detailOpen,
+  } : null);
+  const tabRows = showFeedTabs && !tabsInHeader ? 1 : 0;
 
   if (!auth) {
     return (
@@ -467,16 +482,6 @@ export function SubstackPane({ focused, width, height }: PaneProps) {
     );
   }
 
-  const tabs = (
-    <SubstackFeedTabs
-      subscriptions={subscriptions}
-      activeTab={activeTab}
-      focused={focused}
-      detailOpen={detailOpen}
-      onSelect={selectTab}
-    />
-  );
-
   const detailContent = selectedArticle ? (
     <ArticleDetail
       article={selectedArticle}
@@ -485,19 +490,26 @@ export function SubstackPane({ focused, width, height }: PaneProps) {
       loading={activeDetail.loading}
       error={activeDetail.error}
       scrollRef={detailScrollRef}
-      onOpenArticle={openSelectedArticle}
     />
   ) : null;
 
   return (
     <Box flexDirection="column" width={width} height={height}>
-      {tabs}
+      {tabRows > 0 ? (
+        <SubstackFeedTabs
+          tabs={feedTabs}
+          activeTab={activeTab}
+          focused={focused && !detailOpen}
+          onSelect={selectTab}
+        />
+      ) : null}
       <PaneStatusBody
         align="center"
         loading={home.loading && !home.data}
         loadingLabel="Loading Substack..."
         error={!home.data ? home.error : null}
         errorTitle="Substack unavailable."
+        actions={<Button label="Retry" onPress={() => loadHome(true)} />}
       >
       <SubstackArticleStack
         focused={focused}
@@ -518,7 +530,7 @@ export function SubstackPane({ focused, width, height }: PaneProps) {
         onBodyScrollActivity={loadMoreActivePublicationRows}
         tableScrollRef={tableScrollRef}
         width={width}
-        height={height}
+        height={Math.max(1, height - tabRows)}
         columns={columns}
         sortedRows={sortedRows}
         activePublication={activePublication}

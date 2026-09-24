@@ -1,6 +1,6 @@
-import { memo, useCallback, useMemo, type RefObject } from "react";
-import { Box, ScrollBox, Text, useRendererHost, type ScrollBoxRenderable } from "gloomberb/ui";
-import { Button, Divider, EmptyState, ExternalLinkText, Notice, SectionHeading, Spinner, RemoteImage, TickerBadgeText } from "gloomberb/components";
+import { memo, useCallback, useMemo, type ReactNode, type RefObject } from "react";
+import { Box, ScrollBox, Text, useRendererHost, useUiCapabilities, type ScrollBoxRenderable } from "gloomberb/ui";
+import { Divider, EmptyState, ExternalLinkText, SectionHeading, Spinner, RemoteImage, TickerBadgeText, loadingText } from "gloomberb/components";
 import { useInlineTickers } from "gloomberb/react";
 import { colors } from "gloomberb/theme";
 import { formatReadTime, formatWordCount } from "./table";
@@ -43,6 +43,30 @@ function resolveArticleImageSize(lineWidth: number) {
   };
 }
 
+/**
+ * A quote or embed with a colored rule down its left edge. The desktop draws
+ * the rule as a border; the terminal keeps the "| " glyph.
+ */
+function RuledBlock({
+  color,
+  width,
+  children,
+}: {
+  color: string;
+  width: number;
+  children: ReactNode;
+}) {
+  const { nativePaneChrome } = useUiCapabilities();
+  return (
+    <Box flexDirection="row" width={width}>
+      {nativePaneChrome
+        ? <Box width={2} flexShrink={0} style={{ borderLeft: `2px solid ${color}` }} />
+        : <Text fg={color}>| </Text>}
+      <Box width={Math.max(1, width - 2)}>{children}</Box>
+    </Box>
+  );
+}
+
 function normalizedTwitterUsername(username: string | null | undefined): string | null {
   const normalized = username?.trim().replace(/^@/, "") ?? "";
   return /^[A-Za-z0-9_]{1,15}$/.test(normalized) ? normalized : null;
@@ -68,7 +92,7 @@ function TweetEmbedView({
   openUsername: (username: string) => void;
 }) {
   const username = normalizedTwitterUsername(block.username);
-  const contentWidth = Math.max(1, lineWidth - 3);
+  const contentWidth = Math.max(1, lineWidth - 4);
 
   return (
     <Box flexDirection="column" width={lineWidth} paddingX={1}>
@@ -79,20 +103,17 @@ function TweetEmbedView({
         ) : null}
         {block.dateLabel ? <Text fg={colors.textDim}>{` | ${block.dateLabel}`}</Text> : null}
       </Box>
-      <Box flexDirection="row" width={Math.max(1, lineWidth - 2)}>
-        <Text fg={colors.borderFocused}>| </Text>
-        <Box width={contentWidth}>
-          <TickerBadgeText
-            text={block.text}
-            lineWidth={contentWidth}
-            catalog={catalog}
-            textColor={colors.text}
-            openTicker={openTicker}
-            openLink={openLink}
-            openUsername={openUsername}
-          />
-        </Box>
-      </Box>
+      <RuledBlock color={colors.borderFocused} width={Math.max(1, lineWidth - 2)}>
+        <TickerBadgeText
+          text={block.text}
+          lineWidth={contentWidth}
+          catalog={catalog}
+          textColor={colors.text}
+          openTicker={openTicker}
+          openLink={openLink}
+          openUsername={openUsername}
+        />
+      </RuledBlock>
       {block.imageUrls.length > 0 ? (
         <Box flexDirection="column" paddingLeft={2}>
           {block.imageUrls.slice(0, 2).map((url, index) => (
@@ -140,20 +161,17 @@ function ArticleBlockView({
       );
     case "quote":
       return (
-        <Box flexDirection="row" width={lineWidth}>
-          <Text fg={colors.warning}>| </Text>
-          <Box width={Math.max(1, lineWidth - 2)}>
-            <TickerBadgeText
-              text={block.text}
-              lineWidth={Math.max(1, lineWidth - 2)}
-              catalog={catalog}
-              textColor={colors.textDim}
-              openTicker={openTicker}
-              openLink={openLink}
-              openUsername={openUsername}
-            />
-          </Box>
-        </Box>
+        <RuledBlock color={colors.warning} width={lineWidth}>
+          <TickerBadgeText
+            text={block.text}
+            lineWidth={Math.max(1, lineWidth - 2)}
+            catalog={catalog}
+            textColor={colors.textDim}
+            openTicker={openTicker}
+            openLink={openLink}
+            openUsername={openUsername}
+          />
+        </RuledBlock>
       );
     case "listItem":
       return (
@@ -240,6 +258,8 @@ const ArticleRichContent = memo(function ArticleRichContent({
   lineWidth,
   imageWidth,
   imageHeight,
+  loading,
+  failed,
 }: {
   blocks: SubstackContentBlock[];
   fallbackText: string;
@@ -248,6 +268,8 @@ const ArticleRichContent = memo(function ArticleRichContent({
   lineWidth: number;
   imageWidth: number;
   imageHeight: number;
+  loading: boolean;
+  failed: boolean;
 }) {
   const rendererHost = useRendererHost();
   const resolvedBlocks = useMemo(() => (
@@ -274,7 +296,11 @@ const ArticleRichContent = memo(function ArticleRichContent({
   }, [rendererHost]);
 
   if (resolvedBlocks.length === 0) {
-    return <EmptyState title="No article text returned." />;
+    // The failure reason is footer status; the body only names the state.
+    if (loading) return <Spinner label={loadingText("article")} />;
+    return failed
+      ? <EmptyState title="Article unavailable." status="error" />
+      : <EmptyState title="No article text returned." />;
   }
 
   return (
@@ -303,7 +329,6 @@ export const ArticleDetail = memo(function ArticleDetail({
   loading,
   error,
   scrollRef,
-  onOpenArticle,
 }: {
   article: SubstackArticleSummary;
   detail: SubstackArticleDetail | null;
@@ -311,7 +336,6 @@ export const ArticleDetail = memo(function ArticleDetail({
   loading: boolean;
   error: string | null;
   scrollRef: RefObject<ScrollBoxRenderable | null>;
-  onOpenArticle: () => void;
 }) {
   const resolved = detail ?? null;
   const text = resolved?.contentText || article.previewText || article.subtitle || "";
@@ -321,7 +345,7 @@ export const ArticleDetail = memo(function ArticleDetail({
   const { width: imageWidth, height: imageHeight } = resolveArticleImageSize(lineWidth);
 
   return (
-    <ScrollBox ref={scrollRef} scrollY focusable={false} flexGrow={1} paddingX={1}>
+    <ScrollBox ref={scrollRef} scrollY focusable={false} flexGrow={1} flexBasis={0} minHeight={0} paddingX={1}>
       <Box flexDirection="column" width={lineWidth} gap={1}>
         {/* The stack title already names the article, so the body opens on its metadata. */}
         <Box height={1}>
@@ -333,8 +357,6 @@ export const ArticleDetail = memo(function ArticleDetail({
             ].filter(Boolean).join("  ·  ")}
           </Text>
         </Box>
-        {loading && !resolved ? <Spinner label="Loading article..." /> : null}
-        {error ? <Notice tone="negative">{error}</Notice> : null}
         <ArticleRichContent
           blocks={blocks}
           fallbackText={text}
@@ -343,10 +365,9 @@ export const ArticleDetail = memo(function ArticleDetail({
           lineWidth={lineWidth}
           imageWidth={imageWidth}
           imageHeight={imageHeight}
+          loading={loading && !resolved}
+          failed={!!error && !resolved}
         />
-        {article.url ? (
-          <Button label="Open source" shortcut="O" variant="ghost" compact onPress={onOpenArticle} />
-        ) : null}
       </Box>
     </ScrollBox>
   );
