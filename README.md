@@ -2,7 +2,7 @@
 
 Your Substack subscriptions in [Gloomberb](https://github.com/gloom-sh/gloomberb) — inbox, per-publication archives, and full article reading without leaving the terminal.
 
-Requires Gloomberb 0.15.0 or later. The pane puts its Feed and subscription tabs in the window title bar, which the 0.14 hosts cannot do ([Gloomberb #1091](https://github.com/gloom-sh/gloomberb/pull/1091)).
+Requires Gloomberb 0.15.0 or later. On the desktop the pane puts its Feed and subscription tabs in its own title bar, which 0.14 hosts cannot do ([Gloomberb #1091](https://github.com/gloom-sh/gloomberb/pull/1091)).
 
 ```bash
 gloomberb install gloom-sh/gloom-substack
