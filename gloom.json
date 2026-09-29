@@ -19,6 +19,13 @@
   "contributes": {
     "panes": [
       "substack"
+    ],
+    "shortcuts": [
+      {
+        "code": "SUB",
+        "name": "Substack",
+        "description": "Your Substack inbox and publication archives, with full articles."
+      }
     ]
   },
   "minGloom": "0.15.0"
